@@ -1,0 +1,68 @@
+---
+title: "dapp_testing"
+author: "Minh Nguyen"
+date: "10/25/2021"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+
+dapp_h <- read_csv("DAPP_Data.xlsx - A.csv")
+
+View(dapp_h)
+```
+
+Splitting the first column into two, one for date and one for time
+
+```{r}
+dapp_h <- dapp_h %>%
+  separate(Time, c("Date", "Time"), " ")
+```
+
+Changing time to military time style for graphing purposes
+
+```{r}
+dapp_h <- dapp_h %>%
+  separate(Time, c("Hour", "Minute", "Second"), ":")
+
+hour_str <- as.character(dapp_h$Hour)
+minute_str <- as.character(dapp_h$Minute)
+
+dapp_h <- dapp_h %>%
+  mutate(Time = gsub(" ", "", paste(hour_str, minute_str)))
+
+dapp_h$Time <- as.numeric(dapp_h$Time)
+```
+
+Making a new variable that just shows the number of people who pass through the point, regardless of direction
+
+```{r}
+dapp_h <- dapp_h %>%
+  mutate(totalpeople = Westbound + Eastbound)
+```
+
+Sums of people who pass through the points for each day
+
+```{r}
+pedestriantotals <- dapp_h %>%
+  group_by(Date) %>%
+  summarize(totalforday = sum(totalpeople))
+
+pedestriantotals
+```
+
+
+Making a graphs for number of people who pass through H (One for Tuesday and one for Saturday)
+
+```{r}
+ggplot(filter(dapp_h, Date == "11-09-2021"), aes(x = Time, y = totalpeople)) + geom_point() + labs(title = "Location H on Saturday, September 9th", x = "Time (listed in millitary time)", y = "Total Number of People Who Passed Through", caption = "Vertical Lines Show The Granville Farmers Market Hours (8:30 AM - 12:00 PM)") + theme_classic() + geom_vline(xintercept = 830, linetype = "dashed") + geom_vline(xintercept = 1200, linetype = "dashed")
+
+ggplot(filter(dapp_h, Date == "14-09-2021"), aes(x = Time, y = totalpeople)) + geom_point() + labs(title = "Location H on Tuesday, September 14th", x = "Time (listed in millitary time)", y = "Total Number of People Who Passed Through", caption = "Vertical Lines Show The Granville Farmers Market Hours (3:00 PM - 6:00 PM)") + theme_classic() + geom_vline(xintercept = 1500, linetype = "dashed") + geom_vline(xintercept = 1800, linetype = "dashed")
+```
+
